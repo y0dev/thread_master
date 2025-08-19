@@ -78,8 +78,8 @@ thread-master/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/thread-master.git
-cd thread-master
+git clone https://github.com/y0dev/thread_master.git
+cd thread_master
 ```
 
 ### 2. Install Dependencies
