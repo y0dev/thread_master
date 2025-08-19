@@ -1,0 +1,13 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+psycopg2-binary==2.9.9
+redis==5.0.1
+python-multipart==0.0.6
+pydantic==2.5.0
+pillow==10.1.0
+numpy==1.24.3
+svgpathtools==1.6.1
+# For embroidery digitization (choose one):
+# inkstitch==1.2.0  # If using Ink/Stitch
+# libembroidery==0.1.0  # If using libembroidery
+# Or implement custom digitization logic
