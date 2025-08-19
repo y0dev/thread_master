@@ -82,12 +82,49 @@ const Upload = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingResult, setProcessingResult] = useState<any>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (uploadType === "file") {
       console.log("Uploading files:", files, "Formats:", outputFormats, "Priority:", priority);
+      // TODO: Implement file upload logic
     } else {
-      console.log("Digitizing text:", textContent, "Formats:", outputFormats, "Priority:", priority);
+      // Handle text-to-embroidery
+      setIsProcessing(true);
+      try {
+        const response = await fetch('/api/text-to-embroidery', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: textContent,
+            shape: textShape,
+            units,
+            lineLength: textShape === 'line' ? lineLength : undefined,
+            circleRadius: textShape === 'circle' ? circleRadius : undefined,
+            outputFormats
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setProcessingResult(result);
+          console.log("Text digitization successful:", result);
+        } else {
+          const error = await response.json();
+          console.error("Text digitization failed:", error);
+          alert(`Error: ${error.error}`);
+        }
+      } catch (error) {
+        console.error("Text digitization error:", error);
+        alert("Failed to process text. Please try again.");
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -323,18 +360,79 @@ const Upload = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={uploadType === "file" ? files.length === 0 : textContent.trim().length === 0}
+              disabled={uploadType === "file" ? files.length === 0 : textContent.trim().length === 0 || isProcessing}
             >
-              {uploadType === "file" 
+              {isProcessing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Processing...
+                </>
+              ) : uploadType === "file" 
                 ? `Start Conversion (${files.length} file${files.length !== 1 ? 's' : ''})`
                 : "Digitize Text"
               }
             </Button>
           </form>
+
+          {/* Results Display */}
+          {processingResult && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-green-600">✓ Text Digitization Complete!</CardTitle>
+                <CardDescription>
+                  Your text "{textContent}" has been successfully converted to embroidery files.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {processingResult.files.map((file: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm">.{file.format}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {file.filename}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => downloadFile(file.content, file.filename)}
+                          className="gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Job ID: {processingResult.jobId}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
+// Helper function to download files
+function downloadFile(base64Content: string, filename: string) {
+  const byteCharacters = atob(base64Content);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+  
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
 
 export default Upload;

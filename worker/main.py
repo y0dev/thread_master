@@ -8,6 +8,10 @@ import os
 import asyncio
 from typing import List, Optional
 import logging
+import base64
+
+# Import our text embroidery converter
+from text_embroidery import TextEmbroideryConverter, TextEmbroideryRequest
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,12 +29,23 @@ WORKER_API_KEY = os.getenv("WORKER_API_API_KEY")
 # Security
 security = HTTPBearer()
 
+# Initialize text embroidery converter
+text_converter = TextEmbroideryConverter()
+
 # Models
 class JobRequest(BaseModel):
     job_id: str
     input_file_path: str
     output_formats: List[str]
     priority: bool = False
+
+class TextEmbroideryRequestModel(BaseModel):
+    text: str
+    shape: str  # 'line' or 'circle'
+    units: str  # 'mm' or 'inches'
+    line_length: Optional[float] = None
+    circle_radius: Optional[float] = None
+    output_formats: List[str]
 
 class JobStatus(BaseModel):
     job_id: str
@@ -226,6 +241,58 @@ async def get_queue_status():
     except Exception as e:
         logger.error(f"Error getting queue status: {e}")
         raise HTTPException(status_code=500, detail="Failed to get queue status")
+
+@app.post("/text-to-embroidery", dependencies=[Depends(verify_api_key)])
+async def convert_text_to_embroidery(request: TextEmbroideryRequestModel):
+    """Convert text to embroidery files"""
+    try:
+        logger.info(f"Converting text to embroidery: '{request.text}'")
+        
+        # Convert to internal format
+        internal_request = TextEmbroideryRequest(
+            text=request.text,
+            shape=request.shape,
+            units=request.units,
+            line_length=request.line_length,
+            circle_radius=request.circle_radius,
+            output_formats=request.output_formats
+        )
+        
+        # Generate embroidery files
+        files = text_converter.convert_text_to_embroidery(internal_request)
+        
+        # Convert to response format
+        response_files = []
+        for file in files:
+            response_files.append({
+                "format": file.format,
+                "content": base64.b64encode(file.content).decode('utf-8'),
+                "filename": file.filename,
+                "size": len(file.content)
+            })
+        
+        logger.info(f"Successfully generated {len(files)} embroidery files for text '{request.text}'")
+        
+        return {
+            "success": True,
+            "text": request.text,
+            "shape": request.shape,
+            "units": request.shape,
+            "files": response_files,
+            "message": f"Successfully generated {len(files)} embroidery file(s) from text '{request.text}'"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error converting text to embroidery: {e}")
+        raise HTTPException(status_code=500, detail=f"Text to embroidery conversion failed: {str(e)}")
+
+@app.get("/text-embroidery-formats")
+async def get_supported_formats():
+    """Get list of supported embroidery formats"""
+    return {
+        "supported_formats": ["DST", "PES", "JEF", "EXP", "VP3", "HUS"],
+        "description": "Supported embroidery machine file formats"
+    }
 
 if __name__ == "__main__":
     import uvicorn
