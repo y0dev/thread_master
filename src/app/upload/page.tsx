@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload as UploadIcon, FileImage, X, Type } from "lucide-react";
+import { Upload as UploadIcon, FileImage, X, Type, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Upload = () => {
@@ -23,6 +23,7 @@ const Upload = () => {
   const [units, setUnits] = useState<"mm" | "inches">("mm");
   const [lineLength, setLineLength] = useState(100); // mm
   const [circleRadius, setCircleRadius] = useState(50); // mm
+  const [selectedFont, setSelectedFont] = useState("default");
   
   // Calculate max characters based on shape and size
   const getMaxCharacters = () => {
@@ -83,7 +84,16 @@ const Upload = () => {
   };
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingResult, setProcessingResult] = useState<any>(null);
+  const [processingResult, setProcessingResult] = useState<{
+    success: boolean;
+    jobId: string;
+    files: Array<{
+      format: string;
+      content: string;
+      filename: string;
+    }>;
+    message: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +116,8 @@ const Upload = () => {
             units,
             lineLength: textShape === 'line' ? lineLength : undefined,
             circleRadius: textShape === 'circle' ? circleRadius : undefined,
-            outputFormats
+            outputFormats,
+            font: selectedFont
           })
         });
 
@@ -245,6 +256,24 @@ const Upload = () => {
                           </div>
                         </div>
 
+                        <div>
+                          <Label htmlFor="font-selection">Font Style</Label>
+                          <Select value={selectedFont} onValueChange={setSelectedFont}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="default">Default (Geometric)</SelectItem>
+                              <SelectItem value="block">Block (Bold)</SelectItem>
+                              <SelectItem value="script">Script (Cursive)</SelectItem>
+                              <SelectItem value="serif">Serif (Classic)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Choose the font style for your embroidery text
+                          </p>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {textShape === "line" ? (
                             <div>
@@ -379,14 +408,14 @@ const Upload = () => {
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="text-green-600">✓ Text Digitization Complete!</CardTitle>
-                <CardDescription>
-                  Your text "{textContent}" has been successfully converted to embroidery files.
-                </CardDescription>
+                                         <CardDescription>
+                           Your text &quot;{textContent}&quot; has been successfully converted to embroidery files.
+                         </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {processingResult.files.map((file: any, index: number) => (
+                                         {processingResult.files.map((file, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm">.{file.format}</span>

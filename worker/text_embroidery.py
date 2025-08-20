@@ -37,6 +37,8 @@ class TextEmbroideryConverter:
     def __init__(self):
         self.stitch_density = 0.4  # stitches per mm
         self.character_width = 6.0  # mm per character (approximate)
+        self.available_fonts = ["default", "block", "script", "serif"]
+        self.current_font = "default"
         
     def convert_text_to_embroidery(self, request: TextEmbroideryRequest) -> List[EmbroideryFile]:
         """Convert text to embroidery files in the specified formats."""
@@ -103,12 +105,103 @@ class TextEmbroideryConverter:
             char_x = i * char_width + char_width / 2
             char_y = height / 2
             
-            # Generate stitches for each character (simplified)
-            for j in range(10):  # 10 stitches per character
-                x = char_x + (j - 5) * 0.5
-                y = char_y + (j - 5) * 0.5
-                if 0 <= x <= width and 0 <= y <= height:
-                    stitches.append((x, y))
+            # Generate stitches based on selected font
+            char_stitches = self._generate_character_stitches(char, char_x, char_y, char_width, height)
+            stitches.extend(char_stitches)
+        
+        return stitches
+    
+    def _generate_character_stitches(self, char: str, x: float, y: float, width: float, height: float) -> List[Tuple[float, float]]:
+        """Generate stitches for a single character based on font."""
+        stitches = []
+        
+        if self.current_font == "block":
+            stitches = self._block_font_stitches(char, x, y, width, height)
+        elif self.current_font == "script":
+            stitches = self._script_font_stitches(char, x, y, width, height)
+        elif self.current_font == "serif":
+            stitches = self._serif_font_stitches(char, x, y, width, height)
+        else:  # default
+            stitches = self._default_font_stitches(char, x, y, width, height)
+        
+        return stitches
+    
+    def _block_font_stitches(self, char: str, x: float, y: float, width: float, height: float) -> List[Tuple[float, float]]:
+        """Generate block-style font stitches."""
+        stitches = []
+        char_upper = char.upper()
+        
+        # Define block font patterns (simplified)
+        if char_upper == "A":
+            # A shape: triangle with crossbar
+            stitches.extend([(x, y + height), (x + width/2, y), (x + width, y + height)])
+            stitches.extend([(x + width*0.2, y + height*0.6), (x + width*0.8, y + height*0.6)])
+        elif char_upper == "B":
+            # B shape: vertical line with curves
+            stitches.extend([(x, y), (x, y + height)])
+            stitches.extend([(x, y), (x + width*0.7, y), (x + width, y + height*0.3)])
+            stitches.extend([(x + width*0.7, y + height*0.3), (x, y + height*0.3)])
+            stitches.extend([(x, y + height*0.3), (x + width*0.7, y + height*0.3), (x + width, y + height)])
+        else:
+            # Default: simple rectangle
+            stitches.extend([(x, y), (x + width, y), (x + width, y + height), (x, y + height), (x, y)])
+        
+        return stitches
+    
+    def _script_font_stitches(self, char: str, x: float, y: float, width: float, height: float) -> List[Tuple[float, float]]:
+        """Generate script-style font stitches."""
+        stitches = []
+        char_upper = char.upper()
+        
+        # Define script font patterns (curved, flowing)
+        if char_upper == "A":
+            # Curved A
+            stitches.extend([(x, y + height), (x + width*0.3, y + height*0.3), (x + width*0.5, y)])
+            stitches.extend([(x + width*0.5, y), (x + width*0.7, y + height*0.3), (x + width, y + height)])
+            stitches.extend([(x + width*0.2, y + height*0.6), (x + width*0.8, y + height*0.6)])
+        else:
+            # Default: curved lines
+            for i in range(5):
+                t = i / 4.0
+                curve_x = x + width * t
+                curve_y = y + height * (0.5 + 0.3 * math.sin(t * math.pi))
+                stitches.append((curve_x, curve_y))
+        
+        return stitches
+    
+    def _serif_font_stitches(self, char: str, x: float, y: float, width: float, height: float) -> List[Tuple[float, float]]:
+        """Generate serif-style font stitches."""
+        stitches = []
+        char_upper = char.upper()
+        
+        # Define serif font patterns (with decorative ends)
+        if char_upper == "A":
+            # Serif A with decorative ends
+            stitches.extend([(x, y + height), (x + width*0.5, y), (x + width, y + height)])
+            # Add serifs
+            stitches.extend([(x - width*0.1, y + height), (x, y + height), (x + width*0.1, y + height)])
+            stitches.extend([(x + width*0.9, y + height), (x + width, y + height), (x + width + width*0.1, y + height)])
+        else:
+            # Default: simple with serifs
+            stitches.extend([(x, y), (x + width, y), (x + width, y + height), (x, y + height), (x, y)])
+            # Add serifs
+            if char_upper in "ILT":
+                # Vertical serifs
+                stitches.extend([(x - width*0.1, y), (x, y), (x + width*0.1, y)])
+                stitches.extend([(x - width*0.1, y + height), (x, y + height), (x + width*0.1, y + height)])
+        
+        return stitches
+    
+    def _default_font_stitches(self, char: str, x: float, y: float, width: float, height: float) -> List[Tuple[float, float]]:
+        """Generate default font stitches (simple geometric)."""
+        stitches = []
+        
+        # Simple geometric representation
+        for j in range(10):  # 10 stitches per character
+            stitch_x = x + (j - 5) * 0.5
+            stitch_y = y + (j - 5) * 0.5
+            if 0 <= stitch_x <= width and 0 <= stitch_y <= height:
+                stitches.append((stitch_x, stitch_y))
         
         return stitches
     
@@ -198,29 +291,60 @@ class TextEmbroideryConverter:
             content += f"{i+1:4d}: {x:8.2f}, {y:8.2f}\n"
         
         return content.encode('utf-8')
+    
+    def set_font(self, font_name: str) -> bool:
+        """Set the current font for text generation."""
+        if font_name in self.available_fonts:
+            self.current_font = font_name
+            return True
+        return False
+    
+    def get_available_fonts(self) -> List[str]:
+        """Get list of available fonts."""
+        return self.available_fonts.copy()
+    
+    def get_current_font(self) -> str:
+        """Get the currently selected font."""
+        return self.current_font
 
 def main():
     """Test the text to embroidery converter."""
     converter = TextEmbroideryConverter()
     
-    # Test request
-    request = TextEmbroideryRequest(
-        text="HELLO",
-        shape="line",
-        units="mm",
-        line_length=100,
-        output_formats=["DST", "PES", "JEF"]
-    )
+    print("🧵 Testing Text to Embroidery Converter with Fonts")
+    print("=" * 60)
     
-    try:
-        files = converter.convert_text_to_embroidery(request)
-        print(f"Successfully generated {len(files)} embroidery files:")
+    # Test different fonts
+    test_fonts = ["default", "block", "script", "serif"]
+    
+    for font in test_fonts:
+        print(f"\n📝 Testing Font: {font.upper()}")
+        print("-" * 40)
         
-        for file in files:
-            print(f"  - {file.filename} ({len(file.content)} bytes)")
+        # Set font
+        converter.set_font(font)
+        
+        # Test request
+        request = TextEmbroideryRequest(
+            text="HELLO",
+            shape="line",
+            units="mm",
+            line_length=100,
+            output_formats=["DST"]
+        )
+        
+        try:
+            files = converter.convert_text_to_embroidery(request)
+            print(f"✅ Successfully generated {len(files)} embroidery files:")
             
-    except Exception as e:
-        print(f"Error: {e}")
+            for file in files:
+                print(f"  - {file.filename} ({len(file.content)} bytes)")
+                
+        except Exception as e:
+            print(f"❌ Error: {e}")
+    
+    print("\n" + "=" * 60)
+    print("🎯 Font testing completed!")
 
 if __name__ == "__main__":
     main()

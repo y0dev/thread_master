@@ -46,6 +46,7 @@ class TextEmbroideryRequestModel(BaseModel):
     line_length: Optional[float] = None
     circle_radius: Optional[float] = None
     output_formats: List[str]
+    font: Optional[str] = "default"  # Font selection
 
 class JobStatus(BaseModel):
     job_id: str
@@ -248,6 +249,10 @@ async def convert_text_to_embroidery(request: TextEmbroideryRequestModel):
     try:
         logger.info(f"Converting text to embroidery: '{request.text}'")
         
+        # Set font if specified
+        if request.font and request.font != "default":
+            text_converter.set_font(request.font)
+        
         # Convert to internal format
         internal_request = TextEmbroideryRequest(
             text=request.text,
@@ -292,6 +297,15 @@ async def get_supported_formats():
     return {
         "supported_formats": ["DST", "PES", "JEF", "EXP", "VP3", "HUS"],
         "description": "Supported embroidery machine file formats"
+    }
+
+@app.get("/text-embroidery-fonts")
+async def get_available_fonts():
+    """Get list of available fonts for text embroidery"""
+    return {
+        "available_fonts": text_converter.get_available_fonts(),
+        "current_font": text_converter.get_current_font(),
+        "description": "Available fonts for text-to-embroidery conversion"
     }
 
 if __name__ == "__main__":
