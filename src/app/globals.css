@@ -10,6 +10,19 @@
   --primary-foreground: #ffffff;
   --secondary: #f3f4f6;
   --secondary-foreground: #1f2937;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --error: #ef4444;
+  --error-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --success: #22c55e;
+  --success-foreground: #ffffff;  
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+  --transparent: transparent;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
 }
 
 @theme inline {
@@ -22,6 +35,19 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-error: var(--error); 
+  --color-error-foreground: var(--error-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-transparent: var(--transparent);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 }
 
 body {
