@@ -43,3 +43,7 @@ next-env.d.ts
 # Python Environment
 __pycache__/
 thread-test
+*.pyc
+*.pyo
+*.pyd
+output

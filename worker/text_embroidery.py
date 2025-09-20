@@ -4,6 +4,7 @@ Text to Embroidery Converter
 This module provides functionality to convert text into embroidery machine files.
 """
 
+import os
 import math
 import json
 from typing import Dict, List, Tuple, Optional
@@ -47,7 +48,7 @@ class TextEmbroideryConverter:
         for format_name in request.output_formats:
             try:
                 content = self._generate_embroidery_content(request, format_name)
-                filename = f"embroidery_{request.text[:20]}_{format_name.lower()}.{format_name.lower()}"
+                filename = f"embroidery_{request.text[:20]}.{format_name.lower()}"
                 
                 files.append(EmbroideryFile(
                     format=format_name,
@@ -316,6 +317,22 @@ def main():
     
     # Test different fonts
     test_fonts = ["default", "block", "script", "serif"]
+
+    # Create output directory if not exists
+    os.makedirs("output", exist_ok=True)
+    os.chdir("output")
+            
+    # Create a subdirectory for each worker run check if directory exists run_1, run_2, etc.
+    run_dir = "run_1"
+    i = 1
+    while os.path.exists(run_dir):
+        i += 1
+        run_dir = f"run_{i}"
+    os.makedirs(run_dir)
+    os.chdir(run_dir)
+    
+
+    print(f"   (Saved in directory: {os.path.abspath(run_dir)})")
     
     for font in test_fonts:
         print(f"\n📝 Testing Font: {font.upper()}")
@@ -330,14 +347,19 @@ def main():
             shape="line",
             units="mm",
             line_length=100,
-            output_formats=["DST"]
+            output_formats=["PES"]
         )
         
         try:
             files = converter.convert_text_to_embroidery(request)
             print(f"✅ Successfully generated {len(files)} embroidery files:")
-            
+
             for file in files:
+                # Save to disk for verification (optional)
+                with open(file.filename, 'wb') as f:
+                    f.write(file.content)
+                
+                # Print file info
                 print(f"  - {file.filename} ({len(file.content)} bytes)")
                 
         except Exception as e:
