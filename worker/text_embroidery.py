@@ -5,11 +5,13 @@ This module provides functionality to convert text into embroidery machine files
 """
 
 import os
+import io
 import math
 import json
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
+from pyembroidery import EmbPattern, STITCH, write_dst, write_pes, write_jef
 
 class EmbroideryFormat(Enum):
     DST = "dst"
@@ -74,7 +76,14 @@ class TextEmbroideryConverter:
         
         # Generate stitch coordinates
         stitches = self._generate_stitches(request.text, request.shape, width, height)
+
+        # Build embroidery pattern
+        pattern = EmbPattern()
+        for x, y in stitches:
+            pattern.add_stitch_absolute(STITCH, int(x * 10), int(y * 10))  # Scale to 0.1mm
+        pattern.end()
         
+        """
         # Convert to format-specific content
         if format_name.upper() == 'DST':
             return self._to_dst_format(stitches, width, height)
@@ -85,6 +94,19 @@ class TextEmbroideryConverter:
         else:
             # For other formats, return a generic text representation
             return self._to_generic_format(stitches, format_name, request)
+        """
+        # Convert to format-specific content
+        buffer = io.BytesIO()
+        if format_name.upper() == 'DST':
+            write_dst(pattern, buffer)
+        elif format_name.upper() == 'PES':
+            write_pes(pattern, buffer)
+        elif format_name.upper() == 'JEF':
+            write_jef(pattern, buffer)
+        else:
+            # For other formats, return a generic text representation
+            return self._to_generic_format(stitches, format_name, request)
+        return buffer.getvalue()
     
     def _generate_stitches(self, text: str, shape: str, width: float, height: float) -> List[Tuple[float, float]]:
         """Generate stitch coordinates for the text."""

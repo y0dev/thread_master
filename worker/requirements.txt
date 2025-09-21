@@ -7,6 +7,7 @@ pydantic==2.5.0
 pillow==10.1.0
 numpy==1.24.3
 svgpathtools==1.6.1
+pyembroidery==1.5.1
 # For embroidery digitization (choose one):
 # inkstitch==1.2.0  # If using Ink/Stitch
 # libembroidery==0.1.0  # If using libembroidery
